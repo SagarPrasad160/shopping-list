@@ -31,20 +31,31 @@ const handleSubmit = (e) => {
 
   if (isEdit) {
     updateItem(newItem, selectedItem);
+    return;
   } else {
-    // add item to local storage
-    const items = getItemsFromLocalStorage();
-    items.push(newItem);
-    localStorage.setItem("items", JSON.stringify(items));
-
-    // add item to DOM
-    addItemToDOM(newItem);
+    if (itemAlreadyExists(newItem)) {
+      alert("Item already exists");
+      return;
+    }
   }
+
+  // add item to local storage
+  const items = getItemsFromLocalStorage();
+  items.push(newItem);
+  localStorage.setItem("items", JSON.stringify(items));
+
+  // add item to DOM
+  addItemToDOM(newItem);
 
   checkUI();
 
   // clearing input field
   inputText.value = "";
+};
+
+const itemAlreadyExists = (item) => {
+  const itemsFromLocalStorage = getItemsFromLocalStorage();
+  return itemsFromLocalStorage.includes(item);
 };
 
 const updateItem = (newText, itemToUpdate) => {
@@ -130,6 +141,7 @@ const clearItems = () => {
 
 function checkUI() {
   inputText.value = "";
+  formBtn.innerHTML = "<i class='fas fa-plus'></i> Add Item";
   const items = itemList.querySelectorAll("li");
   if (items.length === 0) {
     filter.hidden = true;
