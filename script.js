@@ -5,6 +5,11 @@ const itemList = document.getElementById("item-list");
 const filter = document.getElementById("filter");
 const clearBtn = document.getElementById("clear");
 
+const formBtn = inputForm.querySelector("button");
+
+let isEdit = false;
+let selectedItem = null;
+
 const createIcon = (classes) => {
   const icon = document.createElement("i");
   icon.className = classes;
@@ -21,15 +26,20 @@ const createButton = (classes) => {
 
 const handleSubmit = (e) => {
   e.preventDefault();
+
   const newItem = inputText.value;
 
-  // add item to local storage
-  const items = getItemsFromLocalStorage();
-  items.push(newItem);
-  localStorage.setItem("items", JSON.stringify(items));
+  if (isEdit) {
+    updateItem(newItem, selectedItem);
+  } else {
+    // add item to local storage
+    const items = getItemsFromLocalStorage();
+    items.push(newItem);
+    localStorage.setItem("items", JSON.stringify(items));
 
-  // add item to DOM
-  addItemToDOM(newItem);
+    // add item to DOM
+    addItemToDOM(newItem);
+  }
 
   checkUI();
 
@@ -37,10 +47,37 @@ const handleSubmit = (e) => {
   inputText.value = "";
 };
 
+const updateItem = (newText, itemToUpdate) => {
+  // update local storage
+  let items = getItemsFromLocalStorage();
+  items = items.map((item) => {
+    if (item === itemToUpdate.textContent) {
+      return newText;
+    }
+    return item;
+  });
+
+  localStorage.setItem("items", JSON.stringify(items));
+
+  itemToUpdate.textContent = "";
+  itemToUpdate.appendChild(document.createTextNode(newText));
+  // create a new button element
+  const button = createButton("remove-item btn-link text-red");
+
+  // append button to list item
+  itemToUpdate.appendChild(button);
+
+  // unset edit mode
+  itemToUpdate.classList.remove("edit");
+  formBtn.innerHTML = "<i class='fas fa-plus'></i> Add Item";
+  isEdit = false;
+};
+
 const addItemToDOM = (newItem) => {
   // create new list item
   const li = document.createElement("li");
   li.appendChild(document.createTextNode(newItem));
+  li.className = "list-item";
   // create a new button element
   const button = createButton("remove-item btn-link text-red");
 
@@ -66,6 +103,21 @@ const removeItem = (e) => {
   checkUI();
 };
 
+const editItem = (e) => {
+  // reset edit classes on list items
+  const listItems = itemList.querySelectorAll("li");
+  listItems.forEach((i) => i.classList.remove("edit"));
+  if (e.target.classList.contains("list-item")) {
+    inputText.value = e.target.textContent;
+    isEdit = true;
+
+    // set edit mode
+    selectedItem = e.target;
+    selectedItem.classList.add("edit");
+    formBtn.innerHTML = "<i class='fas fa-pencil-alt'></i> Update";
+  }
+};
+
 const clearItems = () => {
   // remove from dom
   while (itemList.firstChild) {
@@ -73,9 +125,11 @@ const clearItems = () => {
   }
   // clear localstorage
   localStorage.clear();
+  checkUI();
 };
 
 function checkUI() {
+  inputText.value = "";
   const items = itemList.querySelectorAll("li");
   if (items.length === 0) {
     filter.hidden = true;
@@ -105,6 +159,7 @@ const getItemsFromLocalStorage = () => {
 
 inputForm.addEventListener("submit", handleSubmit);
 itemList.addEventListener("click", removeItem);
+itemList.addEventListener("click", editItem);
 clearBtn.addEventListener("click", clearItems);
 filter.addEventListener("input", filterItems);
 
